@@ -14,8 +14,8 @@ namespace UnityBase.DynamicUndo.Base
 
 		// Action data
 		public   int            newTarget_i, oldTarget_i, newSize, oldSize;
-		internal GlobalObjectId _globalObjectId;
 #if UNITY_EDITOR // for Unity Inspector
+		internal GlobalObjectId _globalObjectId;
 		[SerializeField]
 #endif
 		[ReadOnly]
@@ -28,7 +28,9 @@ namespace UnityBase.DynamicUndo.Base
 		{
 			_undoManager          = undoManager;
 			action                = undoManager.state;
+#if UNITY_EDITOR
 			_globalObjectId       = GlobalObjectId.GetGlobalObjectIdSlow(undoManager as MonoBehaviour);
+#endif
 			_name                 = null;
 			_globalObjectIdString = null;
 			this.oldTarget_i      = oldTarget_i;
@@ -43,7 +45,10 @@ namespace UnityBase.DynamicUndo.Base
 			get
 			{
 				if (_undoManager == null) {
+#if UNITY_EDITOR
 					_undoManager = (GlobalObjectId.GlobalObjectIdentifierToObjectSlow(_globalObjectId) as IUndoManager)!;
+#endif
+
 					if (_undoManager == null) throw new Exception($"Failed to get UndoManager for {_name}");
 				}
 
@@ -53,14 +58,18 @@ namespace UnityBase.DynamicUndo.Base
 
 		public void OnBeforeSerialize()
 		{
+#if UNITY_EDITOR
 			_globalObjectIdString = _globalObjectId.ToString();
+#endif
 			_name                 = undoManager.monoBehaviour.ToString();
 		}
 
 		public void OnAfterDeserialize()
 		{
+#if UNITY_EDITOR
 			if (!GlobalObjectId.TryParse(_globalObjectIdString, out _globalObjectId))
 				Debug.LogError($"UndoManagerAction dailed to parse GlobalObjectId for {_name}");
+#endif
 		}
 
 		public void GetDataFrom(GameObject o)

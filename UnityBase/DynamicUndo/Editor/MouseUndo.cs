@@ -2,7 +2,7 @@ using UnityBase.DynamicUndo.Base;
 using UnityEditor;
 using UnityEngine;
 
-namespace UnityBase.DynamicUndo
+namespace modules.UnityBase.DynamicUndo.Editor
 {
 	public class MouseUndo : MonoBehaviour
 	{
