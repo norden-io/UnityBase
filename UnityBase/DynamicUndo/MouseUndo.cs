@@ -2,10 +2,11 @@ using UnityBase.DynamicUndo.Base;
 using UnityEditor;
 using UnityEngine;
 
-namespace modules.UnityBase.DynamicUndo.Editor
+namespace UnityBase.DynamicUndo
 {
 	public class MouseUndo : MonoBehaviour
 	{
+#if UNITY_EDITOR
 		private static bool attached;
 		private        bool _attached;
 
@@ -52,5 +53,6 @@ namespace modules.UnityBase.DynamicUndo.Editor
 						break;
 				}
 		}
+#endif
 	}
 }
