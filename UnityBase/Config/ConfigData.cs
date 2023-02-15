@@ -11,7 +11,7 @@ namespace UnityBase.Config
 		{
 			_dataPath = dataPath;
 		}
-
+		
 		public abstract override string dataPath { get; }
 		public event OnChangeEvent      OnChange;
 
