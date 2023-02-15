@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using NaughtyAttributes;
 using UnityBase.Config;
 using UnityBase.DynamicUndo.Base;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -12,35 +13,34 @@ namespace DynamicUndo
 	public abstract class UndoManager<T> : MonoBehaviour, IUndoManager where T : IUndoElement, new()
 	{
 		// Stack data
+		[Foldout("UndoManager state")]
 		[SerializeField] internal UndoStack<T> _undoStack = new();
 
+		[Foldout("UndoManager state")]
 		[Tooltip("Automatically Push during Start if Undo Stack is empty")]
 		[SerializeField] internal bool _initializeUndoStack = true;
-
-		[Header("UndoManager state")]
+		
+		[Foldout("UndoManager state")]
+		[Tooltip("Enable/disable Undo, Redo and Push")]
+		[SerializeField] private bool _actionsEnabled = true;
+		
+		[Foldout("UndoManager state")]
 		[SerializeField] [ReadOnly] internal UndoStackManagerState _state = UndoStackManagerState.Inactive;
 
-		[SerializeField] [ReadOnly] private float _currentRate;
-		[SerializeField] [ReadOnly] private float _progress;
+		[Foldout("UndoManager state")]
+		[SerializeField] [ReadOnly] private float _currentRate, _progress;
 
-		[Tooltip("Enable/disable Undo, Redo and Push")]
-		[SerializeField]
-		private bool _actionsEnabled = true;
-
+		[Foldout("UndoManager state")]
 		[Tooltip("Counts how many times undo/redo have been pressed during current undo/redo execution.")]
-		[SerializeField] [ReadOnly]
-		private int _activationCounter;
+		[SerializeField] [ReadOnly] private int _activationCounter;
 
+		[Foldout("UndoManager state")]
 		[Tooltip("Tracks whether this UndoManager is managed by a UndoSuperManager - do not change manually")]
-		[SerializeField]
-		private bool _managed;
+		[SerializeField] private bool _managed;
 
 		// Inspector debug inputs
-		[Header("Action buttons for debugging")]
-		[SerializeField]
-		private bool _save;
-
-		[SerializeField] private bool _undo, _redo, _push;
+		[Foldout("UndoManager action buttons for debugging")]
+		[SerializeField] private bool _save, _undo, _redo, _push;
 
 		//public Model.TransientData stackData => _undoStack;
 		private int _capacity;
