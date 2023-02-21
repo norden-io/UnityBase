@@ -1,0 +1,4 @@
+{
+	"name": "UnityBase.HTTP",
+	"references":[ "GUID:b5dd835dfa07e4b6d9c3393151a01f28", "GUID:776d03a35f1b52c4a9aed9f56d7b4229" ]
+}
