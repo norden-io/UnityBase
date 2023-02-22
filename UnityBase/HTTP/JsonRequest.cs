@@ -26,10 +26,8 @@ namespace UnityBase.HTTP
 			UploadHandler?   uploadHandler
 		) : base(url, method, downloadHandler, uploadHandler)
 		{
-			if (uploadHandler is not null) uploadHandler.contentType = "application/json";
-			Debug.Log($"{method} {url} {uploadHandler?.contentType}:\n"    +
-			          $"{Encoding.UTF8.GetString(uploadHandler?.data!)}\n" +
-			          $"{BitConverter.ToString(uploadHandler?.data!)}");
+			if (uploadHandler is not null)
+				uploadHandler.contentType = "application/json";
 		}
 
 		[ShowNativeProperty]
@@ -53,6 +51,23 @@ namespace UnityBase.HTTP
 		[ShowNativeProperty]
 		public new string? error => base.error ?? _error;
 
+		public override string ToString()
+		{
+			var str = $"{method} {url}";
+
+			if (downloadHandler is not null && downloadHandler.isDone)
+				str += $" RES={GetResponseHeader("Content-Type")}:\n" +
+				       $"\t{downloadHandler.text}\n"                  +
+				       $"\tHeaders={JsonConvert.SerializeObject(GetResponseHeaders())}\n";
+
+			if (uploadHandler is not null)
+				str += $" REQ={uploadHandler.contentType}:\n"               +
+				       $"\t{Encoding.UTF8.GetString(uploadHandler.data)}\n" +
+				       $"\t{BitConverter.ToString(uploadHandler.data)}";
+
+			return str;
+		}
+
 		public event Action<JsonRequest<T>>?         onResponse;
 		public event Action<JsonRequest<T>, T>?      onResponseOK;
 		public event Action<JsonRequest<T>, string>? onResponseERR;
@@ -72,6 +87,8 @@ namespace UnityBase.HTTP
 
 		public new void Send()
 		{
+			Debug.Log($"Request {this}");
+			
 			if (_operation is not null)
 				throw new InvalidOperationException("Cannot send HTTP request: this request has already been sent!");
 			_operation           =  SendWebRequest();
@@ -80,6 +97,8 @@ namespace UnityBase.HTTP
 
 		private void OnCompleted(AsyncOperation _)
 		{
+			Debug.Log($"Response {this}");
+			
 			_error = base.error;
 			if (!string.IsNullOrWhiteSpace(_error)) {
 				// HTTP request failed
