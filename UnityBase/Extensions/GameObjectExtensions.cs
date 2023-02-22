@@ -15,5 +15,12 @@ namespace UnityBase.Extensions
 			components.ForEach(Object.Destroy);
 			components.Clear();
 		}
+		
+		public static void Clear(this GameObject current)
+		{
+			foreach (Transform child in current.transform) {
+				Object.Destroy(child.gameObject);
+			}
+		}
 	}
 }
