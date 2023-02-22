@@ -156,44 +156,26 @@ namespace UnityBase.HTTP
 	
 	public class JsonRequest<TData> : BaseJsonRequest<JsonRequest<TData>, TData>
 	{
-		
 	}
 
-/*
+	/*
+	 * Support paging with Spring HATEOAS
+	 */
 	[Serializable]
-	public class PagedJsonRequest<T> : JsonRequest<Page<T>> where T : PagedType
+	public class PagedJsonRequest<TData> : BaseJsonRequest<PagedJsonRequest<TData>, Page<TData>>
 	{
-		[SerializeField] private List<T>? _unpagedResponse;
+		[SerializeField] private List<TData>? _unpagedResponse;
 
-		public PagedJsonRequest(string url, string method, DownloadHandler? downloadHandler, UploadHandler? uploadHandler)
-			: base(url, method, downloadHandler, uploadHandler)
-		{
-		}
-
-		public List<T>? UnpagedResponse => _unpagedResponse;
-
-		public static PagedJsonRequest<T> Get(string url) =>
-			new(url, "GET", new DownloadHandlerBuffer(), null);
-
-		public static PagedJsonRequest<T> Post(string url, byte[] bodyData) =>
-			new(url, "POST", new DownloadHandlerBuffer(), new UploadHandlerRaw(bodyData));
-
-		public static PagedJsonRequest<T> Post(string url, object json)
-		{
-			var bodyString = JsonConvert.SerializeObject(json);
-			var bodyData   = Encoding.UTF8.GetBytes(bodyString);
-			return Post(url, bodyData);
-		}
-
+		public List<TData>? UnpagedResponse => _unpagedResponse;
 		protected override void OnCompleted(AsyncOperation _)
 		{
 			if (!ParseResponseJson()) return;
 
-			if (_unpagedResponse == null) _unpagedResponse = new List<T>();
+			if (_unpagedResponse == null) _unpagedResponse = new List<TData>();
 
 			foreach (var key in _responseJson!._embedded.Keys) {
-				Debug.Log($"Grabbing _embedded[{key}]");
-				_unpagedResponse.Add(_responseJson!._embedded[key]);
+				Debug.Log($"Grabbing {_responseJson!._embedded[key].Count} from _embedded[{key}]");
+				_unpagedResponse.AddRange(_responseJson!._embedded[key]);
 			}
 
 			var nextUrl = _responseJson!.nextUrl;
@@ -201,35 +183,23 @@ namespace UnityBase.HTTP
 				OnResponseOK();
 			}
 			else {
+				// TODO? may need to Create() new UnityWebRequest here and bind to its onResponse*
 				url        = nextUrl;
 				_operation = null;
 				Send();
 			}
 		}
 	}
-
-	public class JsonRequest : JsonRequest<SerializableDictionary<string, string>>
-	{
-		public JsonRequest(string url, string method, DownloadHandler? downloadHandler, UploadHandler? uploadHandler) :
-			base(url, method, downloadHandler, uploadHandler)
-		{
-		}
-	}
-*/
+	
 #nullable disable
-	public class Page<T> where T : PagedType
+	public class Page<TData>
 	{
-		public Dictionary<string, T> _embedded;
+		public Dictionary<string, List<TData>> _embedded;
 
 		public SerializableDictionary<string, SerializableDictionary<string, string>>? _links;
 
 		public string? nextUrl => _links?.ContainsKey("next") ?? false
 			? _links["next"]["href"]
 			: null;
-	}
-
-	public abstract class PagedType
-	{
-		public abstract string Key { get; }
 	}
 }
