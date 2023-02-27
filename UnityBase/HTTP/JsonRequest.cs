@@ -64,6 +64,7 @@ namespace UnityBase.HTTP
 			request.method = method;
 			request.downloadHandler = downloadHandler;
 			request.uploadHandler = uploadHandler;
+			if (uploadHandler is not null) uploadHandler.contentType = "application/json";
 			return request;
 		}
 
