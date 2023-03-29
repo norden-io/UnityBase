@@ -32,7 +32,7 @@ namespace UnityBase.HTTP
 		protected TData? _responseJson;
 
 		[ShowNativeProperty]
-		public TData? ResponseJson
+		public TData ResponseJson
 		{
 			get
 			{
@@ -44,7 +44,7 @@ namespace UnityBase.HTTP
 						throw new InvalidOperationException(
 							$"Cannot deserialize HTTP response, because the request failed:\n{base.error}");
 					case Result.Success:
-						return _responseJson;
+						return _responseJson!;
 				}
 			}
 		}
@@ -65,6 +65,17 @@ namespace UnityBase.HTTP
 			request.downloadHandler = downloadHandler;
 			request.uploadHandler = uploadHandler;
 			if (uploadHandler is not null) uploadHandler.contentType = "application/json";
+			return request;
+		}
+		
+		public static T Create(UnityWebRequest from)
+		{
+			T request = new();
+			request.url = from.url;
+			request.method = from.method;
+			request.downloadHandler = from.downloadHandler;
+			request.uploadHandler = from.uploadHandler;
+			request.SetRequestHeader("Authorization", from.GetRequestHeader("Authorization")); 
 			return request;
 		}
 
@@ -142,8 +153,15 @@ namespace UnityBase.HTTP
 				OnResponseERR(_error);
 				return false;
 			}
+			
+			if (typeof(TData) == typeof(string)) {
+				_responseJson = (TData)(object)downloadHandler.text;
+			} else if (typeof(TData) == typeof(byte[])) {
+				_responseJson = (TData)(object)downloadHandler.data;
+			} else {
+				_responseJson = JsonConvert.DeserializeObject<TData>(downloadHandler.text);
+			}
 
-			_responseJson = JsonConvert.DeserializeObject<TData>(downloadHandler.text);
 			if (_responseJson is null) {
 				_error = $"Failed to deserialize HTTP response as JSON object {typeof(TData)}:\n" +
 				         $"{downloadHandler.text}";
