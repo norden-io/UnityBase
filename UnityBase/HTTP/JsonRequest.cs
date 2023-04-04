@@ -122,7 +122,19 @@ namespace UnityBase.HTTP
 			_operation           =  SendWebRequest();
 			_operation.completed += OnCompleted;
 		}
-
+		
+		public void Send(Action<T>? onResponseOK)
+		{
+			this.onResponseOK += onResponseOK;
+			Send();
+		}
+		
+		public void Send(Action<T>? onResponseOK, Action<T, string>? onResponseERR)
+		{
+			this.onResponseERR += onResponseERR;
+			Send(onResponseOK);
+		}
+		
 		protected void OnResponseOK()
 		{
 			onResponse?.Invoke(Self);
@@ -193,7 +205,7 @@ namespace UnityBase.HTTP
 			if (_unpagedResponse == null) _unpagedResponse = new List<TData>();
 
 			foreach (var key in _responseJson!._embedded.Keys) {
-				Debug.Log($"Grabbing {_responseJson!._embedded[key].Count} from _embedded[{key}]");
+				Debug.Log($"Unpaging {_responseJson!._embedded[key].Count} items from _embedded[{key}]");
 				_unpagedResponse.AddRange(_responseJson!._embedded[key]);
 			}
 
@@ -213,9 +225,9 @@ namespace UnityBase.HTTP
 #nullable disable
 	public class Page<TData>
 	{
-		public Dictionary<string, List<TData>> _embedded;
+		public Dictionary<string, List<TData>> _embedded = new();
 
-		public SerializableDictionary<string, SerializableDictionary<string, string>>? _links;
+		public SerializableDictionary<string, SerializableDictionary<string, string>>? _links = new();
 
 		public string? nextUrl => _links?.ContainsKey("next") ?? false
 			? _links["next"]["href"]
