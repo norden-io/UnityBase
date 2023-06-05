@@ -25,6 +25,9 @@ namespace UnityBase.HTTP
 			}
 		}
 
+		// Hold reference to additional data to avoid garbage collection
+		public object? _attached;
+		
 		private string? _error;
 
 		protected UnityWebRequestAsyncOperation? _operation;
@@ -56,26 +59,29 @@ namespace UnityBase.HTTP
 			string           url,
 			string           method,
 			DownloadHandler? downloadHandler,
-			UploadHandler?   uploadHandler
+			UploadHandler?   uploadHandler,
+			object? attached =null
 		)
 		{
 			T request = new();
-			request.url = url;
-			request.method = method;
+			request._attached       = attached;
+			request.url             = url;
+			request.method          = method;
 			request.downloadHandler = downloadHandler;
-			request.uploadHandler = uploadHandler;
+			request.uploadHandler   = uploadHandler;
 			if (uploadHandler is not null) uploadHandler.contentType = "application/json";
 			return request;
 		}
 		
-		public static T Create(UnityWebRequest from)
+		public static T Create(UnityWebRequest from, object? attached=null)
 		{
 			T request = new();
-			request.url = from.url;
-			request.method = from.method;
+			request._attached       = attached;
+			request.url             = from.url;
+			request.method          = from.method;
 			request.downloadHandler = from.downloadHandler;
-			request.uploadHandler = from.uploadHandler;
-			request.SetRequestHeader("Authorization", from.GetRequestHeader("Authorization")); 
+			request.uploadHandler   = from.uploadHandler;
+			request.SetRequestHeader("Authorization", from.GetRequestHeader("Authorization"));
 			return request;
 		}
 
@@ -113,7 +119,7 @@ namespace UnityBase.HTTP
 			return Post(url, bodyData);
 		}
 
-		public new void Send()
+		public new T Send()
 		{
 			Debug.Log($"Request {this}");
 
@@ -121,31 +127,43 @@ namespace UnityBase.HTTP
 				throw new InvalidOperationException("Cannot send HTTP request: this request has already been sent!");
 			_operation           =  SendWebRequest();
 			_operation.completed += OnCompleted;
+			return (T)this;
 		}
 		
-		public void Send(Action<T>? onResponseOK)
+		public T Send(Action<T> onResponseOK)
 		{
 			this.onResponseOK += onResponseOK;
 			Send();
+			return (T)this;
 		}
 		
-		public void Send(Action<T>? onResponseOK, Action<T, string>? onResponseERR)
+		public T Send(Action<T> onResponseOK, Action<T, string> onResponseERR)
 		{
 			this.onResponseERR += onResponseERR;
 			Send(onResponseOK);
+			return (T)this;
+		}
+		
+		public T Send(Action<T> onResponseOK, Action<T, string> onResponseERR, Action<T> onResponse)
+		{
+			this.onResponse += onResponse;
+			Send(onResponseOK, onResponseERR);
+			return (T)this;
 		}
 		
 		protected void OnResponseOK()
 		{
-			onResponse?.Invoke(Self);
 			onResponseOK?.Invoke(Self);
+			onResponse?.Invoke(Self);
 		}
 
 		protected void OnResponseERR(string err)
 		{
 			Debug.LogError(err);
-			onResponse?.Invoke(Self);
+			if (downloadHandler != null)
+				Debug.LogError(downloadHandler.error);
 			onResponseERR?.Invoke(Self, err);
+			onResponse?.Invoke(Self);
 		}
 
 		protected virtual void OnCompleted(AsyncOperation _)
@@ -166,7 +184,9 @@ namespace UnityBase.HTTP
 				return false;
 			}
 			
-			if (typeof(TData) == typeof(string)) {
+			if (typeof(TData) == typeof(bool)) {
+				_responseJson = (TData)(object)(error == null);
+			} else if (typeof(TData) == typeof(string)) {
 				_responseJson = (TData)(object)downloadHandler.text;
 			} else if (typeof(TData) == typeof(byte[])) {
 				_responseJson = (TData)(object)downloadHandler.data;
