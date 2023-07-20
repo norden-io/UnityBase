@@ -159,9 +159,7 @@ namespace UnityBase.HTTP
 
 		protected void OnResponseERR(string err)
 		{
-			Debug.LogError(err);
-			if (downloadHandler != null)
-				Debug.LogError(downloadHandler.error);
+			Debug.LogError(err + "\n" + downloadHandler?.error ?? "");
 			onResponseERR?.Invoke(Self, err);
 			onResponse?.Invoke(Self);
 		}
