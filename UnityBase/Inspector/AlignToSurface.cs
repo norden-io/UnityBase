@@ -35,7 +35,9 @@ namespace UnityBase.Inspector
 
 		public void RaycastAndTransform(Ray ray)
 		{
+#if UNITY_EDITOR
 			Undo.RecordObject(transform, $"Align to surface normal '{transform.name}'");
+#endif
 
 			var was_active = transform.gameObject.activeInHierarchy;
 			transform.gameObject.SetActive(false);
